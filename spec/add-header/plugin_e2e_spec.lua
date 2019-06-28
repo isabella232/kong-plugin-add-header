@@ -1,11 +1,11 @@
 local helpers = require "spec.helpers"
 local kong_client = require "kong_client.spec.test_helpers"
 
-describe("Boilerplate", function()
+describe("Add Header", function()
   local kong_sdk, send_request, send_admin_request
 
   setup(function()
-    helpers.start_kong({ custom_plugins = "boilerplate" })
+    helpers.start_kong({ custom_plugins = "add-header" })
 
     kong_sdk = kong_client.create_kong_client()
     send_request = kong_client.create_request_sender(helpers.proxy_client())
@@ -36,7 +36,7 @@ describe("Boilerplate", function()
     it("should add headers to the proxied request", function()
       kong_sdk.plugins:create({
         service_id = service.id,
-        name = "boilerplate",
+        name = "add-header",
         config = {
           say_hello = true
         }
@@ -69,7 +69,7 @@ describe("Boilerplate", function()
     it("should add headers to the proxied request", function()
       kong_sdk.plugins:create({
         service_id = service.id,
-        name = "boilerplate",
+        name = "add-header",
         config = {
           say_hello = false
         }

@@ -1,15 +1,15 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 
-local BoilerplateHandler = BasePlugin:extend()
+local AddHeaderHandler = BasePlugin:extend()
 
-BoilerplateHandler.PRIORITY = 2000
+AddHeaderHandler.PRIORITY = 2000
 
-function BoilerplateHandler:new()
-  BoilerplateHandler.super.new(self, "boilerplate")
+function AddHeaderHandler:new()
+  AddHeaderHandler.super.new(self, "add-header")
 end
 
-function BoilerplateHandler:access(conf)
-  BoilerplateHandler.super.access(self)
+function AddHeaderHandler:access(conf)
+  AddHeaderHandler.super.access(self)
 
   if conf.say_hello then
     kong.log.debug("Hey!")
@@ -25,4 +25,4 @@ function BoilerplateHandler:access(conf)
 
 end
 
-return BoilerplateHandler
+return AddHeaderHandler

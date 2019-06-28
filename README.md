@@ -1,4 +1,4 @@
-# kong-plugin-boilerplate
+# kong-plugin-add-header
 
 ## Install
  - clone the git repo
