@@ -2,87 +2,108 @@ local helpers = require "spec.helpers"
 local kong_client = require "kong_client.spec.test_helpers"
 
 describe("Add Header", function()
-  local kong_sdk, send_request, send_admin_request
+    local kong_sdk, send_request, send_admin_request
 
-  setup(function()
-    helpers.start_kong({ custom_plugins = "add-header" })
+    setup(function()
+        helpers.start_kong({ custom_plugins = "add-header" })
 
-    kong_sdk = kong_client.create_kong_client()
-    send_request = kong_client.create_request_sender(helpers.proxy_client())
-    send_admin_request = kong_client.create_request_sender(helpers.admin_client())
-  end)
+        kong_sdk = kong_client.create_kong_client()
+        send_request = kong_client.create_request_sender(helpers.proxy_client())
+        send_admin_request = kong_client.create_request_sender(helpers.admin_client())
+    end)
 
-  teardown(function()
-    helpers.stop_kong(nil)
-  end)
-
-  before_each(function()
-    helpers.db:truncate()
-  end)
-
-  context("when the say_hello flag is true", function()
-
-    local service
+    teardown(function()
+        helpers.stop_kong(nil)
+    end)
 
     before_each(function()
-      service = kong_sdk.services:create({
-        name = "test-service",
-        url = "http://mockbin:8080/request"
-      })
-
-      kong_sdk.routes:create_for_service(service.id, "/test")
+        helpers.db:truncate()
     end)
 
-    it("should add headers to the proxied request", function()
-      kong_sdk.plugins:create({
-        service_id = service.id,
-        name = "add-header",
-        config = {
-          say_hello = true
-        }
-      })
+    describe("Plugin config", function()
 
-      local response = send_request({
-        method = "GET",
-        path = "/test"
-      })
+        local service
 
-      assert.are.equal(200, response.status)
-      assert.is_equal("Hey Upstream!", response.body.headers["x-upstream-header"])
-      assert.is_equal("Hey Downstream!", response.headers["X-Downstream-Header"])
+        before_each(function()
+            service = kong_sdk.services:create({
+                name = "test-service",
+                url = "http://mockbin:8080/request"
+            })
+        end)
+
+        context("when config params are given correctly", function()
+
+            it("should create plugin successfully", function()
+                local _, response_body = pcall(function()
+                    return kong_sdk.plugins:create({
+                        service_id = service.id,
+                        name = "add-header",
+                        config = {
+                            header_name = "X-Something",
+                            header_value = "Anything"
+                        }
+                    })
+                end)
+
+                assert.are.equal("X-Something", response_body.config.header_name)
+                assert.are.equal("Anything", response_body.config.header_value)
+            end)
+        end)
+
+        context("when config params are missing", function()
+
+            it("should raise error", function()
+                local _, response = pcall(function()
+                    return kong_sdk.plugins:create({
+                        service_id = service.id,
+                        name = "add-header",
+                        config = {}
+                    })
+                end)
+
+                assert.are.equal("header_name is required", response.body["config.header_name"])
+                assert.are.equal("header_value is required", response.body["config.header_value"])
+            end)
+        end)
+
     end)
-  end)
 
-  context("when the say_hello flag is false", function()
+    describe("Plugin handler", function()
 
-    local service
+        local service
 
-    before_each(function()
-      service = kong_sdk.services:create({
-        name = "test-service",
-        url = "http://mockbin:8080/request"
-      })
+        before_each(function()
+            service = kong_sdk.services:create({
+                name = "test-service",
+                url = "http://mockbin:8080/request"
+            })
 
-      kong_sdk.routes:create_for_service(service.id, "/test")
+            kong_sdk.routes:create_for_service(service.id, "/test")
+        end)
+
+        it("should add header to request", function()
+            local header_name = "x-something"
+            local header_value = "anything"
+
+
+            kong_sdk.plugins:create({
+                service_id = service.id,
+                name = "add-header",
+                config = {
+                    header_name = header_name,
+                    header_value = header_value
+                }
+            })
+
+            local response = send_request({
+                method = "GET",
+                path = "/test"
+            })
+
+            --require'pl.pretty'.dump(response)
+
+            assert.is_equal(header_value, response.body.headers[header_name])
+        end)
     end)
 
-    it("should add headers to the proxied request", function()
-      kong_sdk.plugins:create({
-        service_id = service.id,
-        name = "add-header",
-        config = {
-          say_hello = false
-        }
-      })
-
-      local response = send_request({
-        method = "GET",
-        path = "/test"
-      })
-
-      assert.are.equal(200, response.status)
-      assert.is_equal("Bye Upstream!", response.body.headers["x-upstream-header"])
-      assert.is_equal("Bye Downstream!", response.headers["X-Downstream-Header"])
-    end)
-  end)
 end)

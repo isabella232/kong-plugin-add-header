@@ -2,27 +2,19 @@ local BasePlugin = require "kong.plugins.base_plugin"
 
 local AddHeaderHandler = BasePlugin:extend()
 
-AddHeaderHandler.PRIORITY = 2000
+AddHeaderHandler.PRIORITY = 801
 
 function AddHeaderHandler:new()
-  AddHeaderHandler.super.new(self, "add-header")
+    AddHeaderHandler.super.new(self, "add-header")
 end
 
 function AddHeaderHandler:access(conf)
-  AddHeaderHandler.super.access(self)
+    AddHeaderHandler.super.access(self)
 
-  if conf.say_hello then
-    kong.log.debug("Hey!")
+    local header_name = conf.header_name
+    local header_value = conf.header_value
 
-    kong.service.request.set_header("X-Upstream-Header", "Hey Upstream!")
-    kong.response.set_header("X-Downstream-Header", "Hey Downstream!")
-  else
-    kong.log.debug("Bye!")
-
-    kong.service.request.set_header("X-Upstream-Header", "Bye Upstream!")
-    kong.response.set_header("X-Downstream-Header", "Bye Downstream!")
-  end
-
+    kong.service.request.add_header(header_name, header_value)
 end
 
 return AddHeaderHandler
