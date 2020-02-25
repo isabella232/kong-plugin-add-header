@@ -5,7 +5,11 @@ describe("Add Header", function()
     local kong_sdk, send_request, send_admin_request
 
     setup(function()
-        helpers.start_kong({ custom_plugins = "add-header" })
+        --helpers.start_kong({ plugins = "add-header" })
+
+        assert(helpers.start_kong({
+            plugins = "add-header"
+        }))
 
         kong_sdk = kong_client.create_kong_client()
         send_request = kong_client.create_request_sender(helpers.proxy_client())
@@ -34,9 +38,9 @@ describe("Add Header", function()
         context("when config params are given correctly", function()
 
             it("should create plugin successfully", function()
-                local _, response_body = pcall(function()
+                local _, response = pcall(function()
                     return kong_sdk.plugins:create({
-                        service_id = service.id,
+                        service = { id = service.id },
                         name = "add-header",
                         config = {
                             header_name = "X-Something",
@@ -45,8 +49,8 @@ describe("Add Header", function()
                     })
                 end)
 
-                assert.are.equal("X-Something", response_body.config.header_name)
-                assert.are.equal("Anything", response_body.config.header_value)
+                assert.are.equal("X-Something", response.config.header_name)
+                assert.are.equal("Anything", response.config.header_value)
             end)
         end)
 
@@ -55,14 +59,14 @@ describe("Add Header", function()
             it("should raise error", function()
                 local _, response = pcall(function()
                     return kong_sdk.plugins:create({
-                        service_id = service.id,
+                        service = { id = service.id },
                         name = "add-header",
                         config = {}
                     })
                 end)
 
-                assert.are.equal("header_name is required", response.body["config.header_name"])
-                assert.are.equal("header_value is required", response.body["config.header_value"])
+                assert.are.equal("required field missing", response.body.fields.config["header_name"])
+                assert.are.equal("required field missing", response.body.fields.config["header_value"])
             end)
         end)
 
@@ -87,7 +91,7 @@ describe("Add Header", function()
 
 
             kong_sdk.plugins:create({
-                service_id = service.id,
+                service = { id = service.id },
                 name = "add-header",
                 config = {
                     header_name = header_name,
@@ -99,8 +103,6 @@ describe("Add Header", function()
                 method = "GET",
                 path = "/test"
             })
-
-            --require'pl.pretty'.dump(response)
 
             assert.is_equal(header_value, response.body.headers[header_name])
         end)
