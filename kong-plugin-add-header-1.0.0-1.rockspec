@@ -1,9 +1,9 @@
 package = "kong-plugin-add-header"
-version = "0.1.0-1"
+version = "1.0.0-1"
 supported_platforms = {"linux", "macosx"}
 source = {
   url = "git+https://github.com/emartech/kong-plugin-add-header.git",
-  tag = "0.1.0"
+  tag = "1.0.0"
 }
 description = {
   summary = "Header setter for Kong API gateway plugins.",
