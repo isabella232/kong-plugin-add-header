@@ -1,6 +1,15 @@
 return {
+    name = "add-header",
     fields = {
-        header_name = { type = "string", required = true },
-        header_value = { type = "string", required = true }
+        {
+            config = {
+                type = "record",
+                fields = {
+                    { header_name = { type = "string", required = true } },
+                    { header_value = { type = "string", required = true } }
+                }
+            }
+        }
     }
+
 }
